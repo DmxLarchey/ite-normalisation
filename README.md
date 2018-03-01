@@ -18,7 +18,7 @@
 ### What is this repository for? ###
 
 * This repository is a Coq implementation and total correctness
-  proof of L. Paulson If-Then-Else normalisation which is nested
+  proof of L. Paulson If-Then-Else normalisation which is a nested
   recursive algorithm with a complicated scheme. The proof of
   partial correctness and termination is postponed after the
   domain and function have been defined together which their
