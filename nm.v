@@ -9,27 +9,7 @@
 (*         CeCILL v2 FREE SOFTWARE LICENSE AGREEMENT          *)
 (**************************************************************)
 
-Require Import Arith Omega Wellfounded.
-
-Set Implicit Arguments.
-
-Section measure_rect.
-
-  Variables (X : Type) (m : X -> nat) (P : X -> Type)
-            (HP : forall x, (forall y, m y < m x -> P y) -> P x).
-
-  Theorem measure_rect : forall x, P x.
-  Proof.
-    apply (@well_founded_induction_type _ (fun x y => m x < m y)); auto.
-    apply wf_inverse_image, lt_wf.
-  Qed.
-
-End measure_rect.
-
-Definition measure_rec X m (P : X -> Set) := @measure_rect X m P.
-Definition measure_ind X m (P : X -> Prop) := @measure_rect X m P.
-
-(* From verify.rwth-aachen.de/giesl/papers/ibn96-30.ps
+(** From verify.rwth-aachen.de/giesl/papers/ibn96-30.ps
 
    type cexpr = at | if of cexpr*cexpr*cexpr
 
@@ -56,14 +36,35 @@ Definition measure_ind X m (P : X -> Prop) := @measure_rect X m P.
   Then we show partial correctness:
     a) if De : d_nm e then nm e De is normal
     b) if De : d_nm e then nm e De is equivalent to e
-  by induction on D
+  by induction on De
 
   Then we show totality: 
     a) for some given size measure |e| : nat, we have 
          forall e (De : d_nm e), |nm e De| <= |e|
+       by induction on De
     b) forall e, d_nm e by induction on |e|
 
 *)
+
+Require Import Arith Omega Wellfounded.
+
+Set Implicit Arguments.
+
+Section measure_rect.
+
+  Variables (X : Type) (m : X -> nat) (P : X -> Type)
+            (HP : forall x, (forall y, m y < m x -> P y) -> P x).
+
+  Theorem measure_rect : forall x, P x.
+  Proof.
+    apply (@well_founded_induction_type _ (fun x y => m x < m y)); auto.
+    apply wf_inverse_image, lt_wf.
+  Qed.
+
+End measure_rect.
+
+Definition measure_rec X m (P : X -> Set) := @measure_rect X m P.
+Definition measure_ind X m (P : X -> Prop) := @measure_rect X m P.
 
 Section nm.
 
@@ -275,12 +276,12 @@ Section nm.
     | in_eq_3 : forall x y z, x ~e y -> y ~e z -> x ~e z
   where "x ~e y" := (equiv x y).
 
+  Hint Constructors equiv.
+
   Fact equiv_refl e : e ~e e.
-  Proof.
-    induction e.
-    apply in_eq_2.
-    apply in_eq_1; auto.
-  Qed.
+  Proof. induction e; auto. Qed.
+
+  Hint Resolve equiv_refl.
 
   Notation equiv_trans := in_eq_3.
 
@@ -291,39 +292,37 @@ Section nm.
     induction D as [ e D1 D2 | | y z D1 ID1 D2 ID2 | u v w y z D1 ID1 D2 ID2 D3 ID3 ].
 
     rewrite (nm_pirr _ D1); auto.
-    rewrite nm_fix_0; constructor.
-    rewrite nm_fix_1; apply in_eq_1; auto; constructor.
+    rewrite nm_fix_0; auto.
+    rewrite nm_fix_1; auto.
     rewrite nm_fix_2.
-    apply equiv_trans with (2 := ID3).
-    apply equiv_trans with (1 := in_eq_0 _ _ _ _ _).
-    apply in_eq_1; auto.
-    apply equiv_refl.
+    apply equiv_trans with (2 := ID3),
+          equiv_trans with (1 := in_eq_0 _ _ _ _ _); auto.
   Qed.
 
   (* We finish with the termination of nm *)
 
+  Reserved Notation "'[' e ']'" (at level 50).
+
   Fixpoint ce_size e :=
     match e with
       | α => 1
-      | ω x y z => ce_size x * (1 + ce_size y + ce_size z)
-    end.
+      | ω x y z => [x] * (1 + [y] + [z])
+    end
+  where "[ e ]" := (ce_size e).
 
-  Fact ce_size_ge_1 : forall e, 1 <= ce_size e.
+  Fact ce_size_ge_1 : forall e, 1 <= [e].
   Proof.
     refine (fix loop e := _).
-    destruct e as [ | [ | u v w ] y z ].
-    simpl; omega.
-    simpl; omega.
+    destruct e as [ | [ | u v w ] y z ]; try (simpl; omega).
     simpl.
     change 1 with (1 * 1 * 1).
-    apply mult_le_compat.
-    apply mult_le_compat.
+    do 2 (apply mult_le_compat; try omega).
     apply loop.
-    omega.
-    omega.
   Qed.
 
-  Fact nm_dec e D : ce_size (nm e D) <= ce_size e.
+  (* The size ce_size decrease (not strictly) *) 
+
+  Fact nm_dec e D : [nm e D] <= [e].
   Proof.
     induction D as [ e D1 D2 | | y z D1 ID1 D2 ID2 | u v w y z D1 ID1 D2 ID2 D3 ID3 ].
 
@@ -341,6 +340,8 @@ Section nm.
     simpl mult at 2; omega.
   Qed.
 
+  (* Termination/totality by induction on [e] *)
+
   Theorem d_nm_total e : d_nm e.
   Proof.
     induction e as [ [ | [ | u v w ] y z ] IHe ] using (measure_ind ce_size).
@@ -356,7 +357,7 @@ Section nm.
       apply mult_le_compat.
       apply ce_size_ge_1.
       simpl; apply le_n_S.
-      generalize (ce_size v) (ce_size y) (ce_size z) (ce_size w).
+      generalize ([v]) ([y]) ([z]) ([w]).
       intros a b c d.
       rewrite Nat.mul_add_distr_r.
       generalize (a * S (b+c)) (d*S(b+c)). 
@@ -370,7 +371,7 @@ Section nm.
       apply mult_le_compat.
       apply ce_size_ge_1.
       simpl; apply le_n_S.
-      generalize (ce_size v) (ce_size y) (ce_size z) (ce_size w).
+      generalize ([v]) ([y]) ([z]) ([w]).
       intros a b c d.
       rewrite Nat.mul_add_distr_r.
       generalize (a * S (b+c)) (d*S(b+c)). 
@@ -383,11 +384,11 @@ Section nm.
     2: apply ce_size_ge_1.
     generalize (nm_dec D1) (nm_dec D2).
     simpl ce_size.
-    assert (1+1 <= ce_size y + ce_size z) as H.
+    assert (1+1 <= [y] + [z]) as H.
       generalize (ce_size_ge_1 y) (ce_size_ge_1 z); omega.
     revert H.
-    generalize (ce_size y + ce_size z); intros a H H1 H2.
-    apply le_lt_trans with (S ((ce_size v + ce_size w)*(S a))).
+    generalize ([y] + [z]); intros a H H1 H2.
+    apply le_lt_trans with (S (([v] + [w])*(S a))).
     apply le_n_S.
     rewrite Nat.mul_add_distr_r; omega.
     simpl mult at 2; omega.
