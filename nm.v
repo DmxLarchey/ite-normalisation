@@ -7,9 +7,25 @@
 (*         CeCILL v2 FREE SOFTWARE LICENSE AGREEMENT          *)
 (**************************************************************)
 
-Require Import Arith Omega List induction.
+Require Import Arith Omega Wellfounded.
 
 Set Implicit Arguments.
+
+Section measure_rect.
+
+  Variables (X : Type) (m : X -> nat) (P : X -> Type)
+            (HP : forall x, (forall y, m y < m x -> P y) -> P x).
+
+  Theorem measure_rect : forall x, P x.
+  Proof.
+    apply (@well_founded_induction_type _ (fun x y => m x < m y)); auto.
+    apply wf_inverse_image, lt_wf.
+  Qed.
+
+End measure_rect.
+
+Definition measure_rec X m (P : X -> Set) := @measure_rect X m P.
+Definition measure_ind X m (P : X -> Prop) := @measure_rect X m P.
 
 (* From verify.rwth-aachen.de/giesl/papers/ibn96-30.ps
 
@@ -175,8 +191,8 @@ Section nm.
     inversion 1; subst; auto.
     clear H0.
     intros H1 H2.
-    rewrite (g_nm_fun H1 (nm_spec D1)).
-    rewrite (g_nm_fun H2 (nm_spec D2)).
+    rewrite (g_nm_fun H1 (nm_spec Dv)).
+    rewrite (g_nm_fun H2 (nm_spec Dw)).
     auto.
   Qed.
 
