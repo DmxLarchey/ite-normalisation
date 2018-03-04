@@ -2,8 +2,8 @@
 (*   Copyright Dominique Larchey-Wendling    [*]              *)
 (*             Jean-François Monin           [+]              *)
 (*                                                            *)
-(*                 [*] Affiliation LORIA -- CNRS              *)
-(*                 [+] Affiliation VERIMAG - Univ. Grenoble   *)
+(*            [*] Affiliation LORIA -- CNRS                   *)
+(*            [+] Affiliation VERIMAG - Univ. Grenoble-Alpes  *)
 (**************************************************************)
 (*      This file is distributed under the terms of the       *)
 (*         CeCILL v2 FREE SOFTWARE LICENSE AGREEMENT          *)
@@ -91,31 +91,25 @@ Section nm.
     induction 1 as [ 
                    | y ny z nz H1 IH1 H2 IH2
                    | u v w y z na nb nc H1 IH1 H2 IH2 H3 IH3 ]; inversion 1; subst; auto.
-    f_equal; auto.
-    apply IH1 in H9; subst.
-    apply IH2 in H10; subst.
-    apply IH3 in H11; subst.
-    auto.
+    - f_equal; auto.
+    - apply IH1 in H9; subst.
+      apply IH2 in H10; subst.
+      apply IH3 in H11; subst.
+      auto.
   Qed.
 
   Unset Elimination Schemes.
 
-  Inductive d_nm (e : cexpr) : Prop :=
-    | in_dnm_0 : e = α -> d_nm e
-    | in_dnm_1 : (exists y z, e = ω α y z)
-              -> (forall y z, e = ω α y z -> d_nm y)
-              -> (forall y z, e = ω α y z -> d_nm z) 
-              -> d_nm e
-    | in_dnm_2 : (exists u v w y z, e = ω (ω u v w) y z)
-              -> (forall u v w y z, e = ω (ω u v w) y z -> d_nm (ω v y z))
-              -> (forall u v w y z, e = ω (ω u v w) y z -> d_nm (ω w y z))
-              -> (forall u v w y z na nb, e = ω (ω u v w) y z
-                                      -> g_nm (ω v y z) na 
-                                      -> g_nm (ω w y z) nb 
-                                      -> d_nm (ω u na nb))
-              -> d_nm e.
-
-  Scheme d_nm_internal_ind := Induction for d_nm Sort Prop.
+  Inductive d_nm : cexpr -> Prop :=
+    | in_dnm_0 : d_nm α
+    | in_dnm_1 : forall y z, d_nm y -> d_nm z -> d_nm (ω α y z)
+    | in_dnm_2 : forall a b c y z,
+                 d_nm (ω b y z) 
+              -> d_nm (ω c y z) 
+              ->(forall nb nc, ω b y z -nm> nb  
+                           ->  ω c y z -nm> nc 
+                           ->  d_nm (ω a nb nc)) 
+              -> d_nm (ω (ω a b c) y z).
 
   Set Elimination Schemes.
   
@@ -123,45 +117,35 @@ Section nm.
 
     Let nm_rec : forall e, d_nm e -> { n | e -nm> n }.
     Proof.
-      refine (fix loop e He { struct He } := _).
-      refine (match e as e' return e = e' -> _ with
-        | α               => fun E => exist _ α _
-        | ω α y z         => fun E => _
-        | ω (ω u v w) y z => fun E => _
-      end eq_refl).
+      refine (fix loop e De { struct De } := _).
+      revert De.
+      refine (match e as e' return d_nm e' -> sig (g_nm e') with
+        | α               => fun De => _
+        | ω α y z         => fun De => _
+        | ω (ω a b c) y z => fun De => _
+      end); clear e.
 
-      subst; constructor.
+      - exists α; constructor.
     
-      refine (match @loop y _ with exist _ ny Hy => _ end).
-      destruct He as [ ? | _ He _ | (? & ? & ? & ? & ? & ?) _ _ _ ].
-      subst; discriminate.
-      apply He with (1 := E).
-      subst; discriminate.
-      refine (match @loop z _ with exist _ nz Hz => _ end).
-      destruct He as [ ? | _ _ He | (? & ? & ? & ? & ? & ?) _ _ _ ].
-      subst; discriminate.
-      apply He with (1 := E).
-      subst; discriminate.
-      exists (ω α ny nz).
-      subst; constructor; auto.
+      - refine (match @loop y _ with exist _ ny Dy => _ end).
+        { inversion De; assumption. }
+        cbn in Dy. 
+        refine (match @loop z _ with exist _ nz Dz => _ end).
+        { inversion De; assumption. }
+        cbn in Dz. 
+        exists (ω α ny nz).
+        subst; constructor; assumption.
 
-      refine (match @loop (ω v y z) _ with exist _ na Ha => _ end).
-      destruct He as [ ? | (? & ? & ?) _ _ | _ He _ _ ].
-      subst; discriminate.
-      subst; discriminate.
-      apply He with (1 := E).
-      refine (match @loop (ω w y z) _ with exist _ nb Hb => _ end).
-      destruct He as [ ? | (? & ? & ?) _ _ | _ _ He _ ].
-      subst; discriminate.
-      subst; discriminate.
-      apply He with (1 := E).
-      refine (match @loop (ω u na nb) _ with exist _ nc Hc => _ end).
-      destruct He as [ ? | (? & ? & ?) _ _ | _ _ _ He ].
-      subst; discriminate.
-      subst; discriminate.
-      apply He with (1 := E); auto.
-      exists nc; subst.
-      constructor 3 with na nb; auto.
+      - refine (match @loop (ω b y z) _ with exist _ nb Db => _ end).
+        { inversion De; assumption. }
+        cbn in Db. 
+        refine (match @loop (ω c y z) _ with exist _ nc Dc => _ end).
+        { inversion De; assumption. }
+        cbn in Dc.
+        refine (match @loop (ω a nb nc) _ with exist _ na Da => _ end).
+        { inversion De; auto. }
+        exists na.
+        subst; constructor 3 with nb nc; assumption. 
     Qed.
 
     Definition nm e D := proj1_sig (@nm_rec e D).
@@ -177,28 +161,18 @@ Section nm.
   Proof. constructor; auto. Qed.
 
   Fact d_nm_1 y z : d_nm y -> d_nm z -> d_nm (ω α y z).
-  Proof. 
-    constructor 2.
-    exists y, z; auto.
-    inversion 1; subst; auto.
-    inversion 1; subst; auto.
-  Qed.
+  Proof. constructor 2; assumption.  Qed.
 
   Fact d_nm_2 u v w y z Dv Dw :
-                        d_nm (ω u (nm (ω v y z) Dv) (nm (ω w y z) Dw)) -> d_nm (ω (ω u v w) y z).
+       d_nm (ω u (nm (ω v y z) Dv) (nm (ω w y z) Dw)) -> d_nm (ω (ω u v w) y z).
   Proof.
-    constructor 3.
-    exists u, v, w, y, z; auto.
-    inversion 1; subst; auto.
-    inversion 1; subst; auto.
-    inversion 1; subst; auto.
-    clear H0.
-    intros H1 H2.
-    rewrite (g_nm_fun H1 (nm_spec Dv)).
-    rewrite (g_nm_fun H2 (nm_spec Dw)).
-    auto.
+    constructor 3; auto.
+    intros na nb nma nmb. 
+    rewrite (g_nm_fun nma (nm_spec Dv)).
+    rewrite (g_nm_fun nmb (nm_spec Dw)).
+    assumption.
   Qed.
-
+ 
   Section d_nm_ind.
 
     Variables (P : forall e, d_nm e -> Prop)
@@ -207,19 +181,13 @@ Section nm.
               (HP1 : forall y z D1 (_ : P D1) D2 (_ : P D2), P (@d_nm_1 y z D1 D2))
               (HP2 : forall u v w y z D1 (_ : P D1) D2 (_ : P D2) D3 (_ : P D3), P (@d_nm_2 u v w y z D1 D2 D3)).
 
-    Theorem d_nm_ind : forall e D, @P e D.
+    Fixpoint d_nm_ind e D { struct D } : @P e D.
     Proof.
-      apply d_nm_internal_ind.
-
-      intros; subst.
-      apply HPi with (1 := HP0).
-
-      intros ? (y & z & ?) H1 IH1 H2 IH2; subst.
-      apply HPi with (1 := HP1 (IH1 _ _ eq_refl) (IH2 _ _ eq_refl)).
-
-      intros ? (u & v & w & y & z & ?) H1 IH1 H2 IH2 H3 IH3; subst.
-      apply HPi with (1 := HP2 (IH1 _ _ _ _ _ eq_refl) (IH2 _ _ _ _ _ eq_refl)
-             (IH3 _ _ _ _ _ _ _ eq_refl (nm_spec (H1 _ _ _ _ _ eq_refl)) (nm_spec (H2 _ _ _ _ _ eq_refl)))).
+      destruct D as [ | y z Dy Dz | a b c y z Db Dc Da ].
+      - apply HPi with (1 := HP0).
+      - apply HPi with (1 := HP1 (d_nm_ind _ Dy) (d_nm_ind _ Dz)).
+      - generalize (Da _ _ (nm_spec Db) (nm_spec Dc)); intro Da'. 
+        apply HPi with (1 := HP2 (d_nm_ind _ Db) (d_nm_ind _ Dc) (d_nm_ind _ Da')).
     Qed.
 
   End d_nm_ind.
@@ -239,11 +207,10 @@ Section nm.
   Proof. 
     apply g_nm_fun with (ω (ω u v w) y z).
     apply nm_spec.
-    constructor 3 with (nm _ D1) (nm _ D2); apply nm_spec. 
+    constructor 3 with (nm _ D1) (nm _ D2); apply nm_spec.
   Qed.
 
-  (* Now we show the partial correctness of nm, independently
-     of its termination *)
+  (* Now we show the partial correctness of nm, independently of its termination *)
 
   Inductive normal : cexpr -> Prop :=
     | in_normal_0 : normal α
@@ -263,7 +230,7 @@ Section nm.
 
   (** equiv is the congruence generated by
 
-         ite (ite u v w) y z ~~ ite u (ite v y z) (ite w y z)
+         ite (ite u v w) y z ~e ite u (ite v y z) (ite w y z)
 
     *)
 
@@ -301,7 +268,7 @@ Section nm.
 
   (* We finish with the termination of nm *)
 
-  Reserved Notation "'[' e ']'" (at level 50).
+  Reserved Notation "'[' e ']'" (at level 0).
 
   Fixpoint ce_size e :=
     match e with
@@ -320,7 +287,7 @@ Section nm.
     apply loop.
   Qed.
 
-  (* The size ce_size decrease (not strictly) *) 
+  Hint Resolve ce_size_ge_1.
 
   Fact nm_dec e D : [nm e D] <= [e].
   Proof.
