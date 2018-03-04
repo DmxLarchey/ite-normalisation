@@ -1,0 +1,10 @@
+*.v.d
+*.glob
+*.vo
+*.vo.aux
+*.aux
+*.log
+*.out
+*.blg
+*.ml
+*.mli
