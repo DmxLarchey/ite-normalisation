@@ -101,7 +101,10 @@ endif
 #                    #
 ######################
 
-VFILES:=nm.v
+VFILES:=nm.v\
+  nm_defs.v\
+  nm_domain.v\
+  nm_correct.v
 
 ifneq ($(filter-out archclean clean cleanall printenv,$(MAKECMDGOALS)),)
 -include $(addsuffix .d,$(VFILES))

@@ -1,2 +1,5 @@
 -R . Top
 nm.v
+nm_defs.v
+nm_domain.v
+nm_correct.v
