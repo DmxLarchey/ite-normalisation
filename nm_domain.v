@@ -11,22 +11,24 @@
 
 (** Using the simulated IR definition of 
 
-         d_nm : Ω -> Prop 
-       and nm : forall e, d_nm e -> Ω
+                        𝔻 : Ω -> Prop 
+       and nm : forall e, 𝔻 e -> Ω
 
-    we show totality of d_nm: 
+    we show totality of 𝔻: 
  
-      a) we define a measure |.| : Ω -> nat by structural induction
+      a) we define a measure [.] : Ω -> nat by structural induction
+
       b) we show that nm preserves the measure, ie
 
-           forall e (De : d_nm e), |nm e De| <= |e|
+           forall e (De : 𝔻 e), [nm e De] <= [e]
 
-         by dependent induction on De : d_nm e
+         by dependent induction on De : 𝔻 e
+
       c) we show that d_nm is total
       
-           forall e, d_nm e 
+           forall e, 𝔻 e 
            
-         by induction on |e|
+         by induction on [e] : nat
 *)
 
 Require Import Arith Omega Wellfounded.
@@ -94,12 +96,12 @@ Section d_nm_total.
 
   (** Termination/totality by induction on [e] *)
 
-  Theorem d_nm_total e : d_nm e.
+  Theorem d_nm_total e : 𝔻 e.
   Proof.
     induction e as [ [ | [ | u v w ] y z ] IHe ] using (measure_ind ce_size).
     - apply d_nm_0.
     - apply d_nm_1; apply IHe; simpl; omega.
-    - assert (D1 : d_nm (ω v y z)).
+    - assert (D1 : 𝔻 (ω v y z)).
       { apply IHe.
         simpl ce_size at 2.
         unfold lt.
@@ -113,7 +115,7 @@ Section d_nm_total.
         rewrite Nat.mul_add_distr_r.
         generalize (a * S (b+c)) (d*S(b+c)). 
         intros; omega. }
-      assert (D2 : d_nm (ω w y z)).
+      assert (D2 : 𝔻 (ω w y z)).
       { apply IHe.
         simpl ce_size at 2.
         unfold lt.
