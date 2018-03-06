@@ -95,8 +95,8 @@ Section nm_def.
   Section nm_rec.
   
     (** In the five next lemmas, it is critically important
-        that the output domain predicate d_nm is structurally
-        simpler (ie. a sub-term) than the input domain predicate
+        that the output domain predicate 𝔻 is structurally
+        simpler (ie. a sub-term) than the input domain predicate 𝔻
         
         Miraculously, inversion does the job ... this may not be 
         true with older version of the tactic ...
@@ -114,21 +114,21 @@ Section nm_def.
     Let d_nm_inv_4 a b c y z : 𝔻 (ω (ω a b c) y z) -> 𝔻 (ω c y z).
     Proof. inversion 1; trivial. Qed.
     
-    Let d_nm_inv_5 a b c y z nb nc : 
-                                                              𝔻 (ω (ω a b c) y z)
-                            -> ω b y z -nm> nb
-                            -> ω c y z -nm> nc
-                            -> 𝔻 (ω a nb nc).
+    Let d_nm_inv_5 a b c y z nb nc : 𝔻 (ω (ω a b c) y z)
+                                  -> ω b y z -nm> nb
+                                  -> ω c y z -nm> nc
+                                  -> 𝔻 (ω a nb nc).
     Proof. inversion 1; intros; auto. Qed.
 
-    (** We give the proof directly but it could be built
-        progressively using refine tactics. This is the 
-        recommended method. Obtaining the code directly
-        is not for the faint of heart ... 
+    (** We give the proof term directly (programming style)
+        but it could be built progressively using refine tactics. 
+        Using refine is the recommended method. Obtaining the code 
+        directly is not for the faint of heart ... even though
+        it looks nice in the end. 
 
-        This proof term is a decoration of the
-        OCaml code of nm with extra type information
-        consisting on:
+        This proof term is a decoration of the OCaml code of nm 
+        with extra typing information consisting in:
+
           1/ a pre-condition De : 𝔻 e which is a termination certificate
           2/ a post-condition relating the input e to the output n : e -nm> n
  
