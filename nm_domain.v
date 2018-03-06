@@ -11,8 +11,7 @@
 
 (** Using the simulated IR definition of 
 
-                        𝔻 : Ω -> Prop 
-       and nm : forall e, 𝔻 e -> Ω
+            𝔻 : Ω -> Prop and nm : forall e, 𝔻 e -> Ω
 
     we show totality of 𝔻: 
  
@@ -24,7 +23,7 @@
 
          by dependent induction on De : 𝔻 e
 
-      c) we show that d_nm is total
+      c) we show that 𝔻 is total
       
            forall e, 𝔻 e 
            

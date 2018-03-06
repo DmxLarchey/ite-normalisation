@@ -11,8 +11,7 @@
 
 (** Using the simulated IR definition of 
 
-                        𝔻 : Ω -> Prop 
-       and nm : forall e, 𝔻 e -> Ω
+              𝔻 : Ω -> Prop and nm : forall e, 𝔻 e -> Ω
 
     we show show partial correctness of nm:
 
