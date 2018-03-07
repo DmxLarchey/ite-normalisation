@@ -95,9 +95,10 @@ Section nm_def.
   Section nm_rec.
   
     (** In the five next lemmas, it is critically important
-        that the output domain predicate 𝔻 is structurally
-        simpler (ie. a sub-term) than the input domain predicate 𝔻
-        
+        that the output domain predicate of type 𝔻 is structurally
+        simpler (ie. a sub-term) than the input domain predicate 
+        of type 𝔻.
+
         Miraculously, inversion does the job ... this may not be 
         true with older version of the tactic ...
      *)

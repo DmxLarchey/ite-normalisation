@@ -10,7 +10,7 @@
 (**************************************************************)
 
 Require Export nm_defs     (* Definition of 𝔻 : Ω -> Prop and nm : forall e, 𝔻 e -> Ω by simulated IR *)
-               nm_correct  (* Partial correction of nm : when it terminates, nm produces a normal form of it input *)
+               nm_correct  (* Partial correction of nm : when it terminates, nm produces a normal form of its input *)
                nm_domain   (* Termination of nm (i.e. totality of d_nm) *)
                .
 
