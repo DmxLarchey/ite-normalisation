@@ -34,7 +34,7 @@ let rec nm e = match e with
   the domain and function have been defined together which their
   constructors, induction principle, proof-irrelevance and fixpoint equations.
 
-* The paper [Simulating Induction-Recursion for Partials Algorithms](http://wwww.loria.fr/~larchey/papers/TYPES_2018_paper_19.pdf)
+* The paper [Simulating Induction-Recursion for Partials Algorithms](http://www.loria.fr/~larchey/papers/TYPES_2018_paper_19.pdf)
   submitted to [TYPES 2018](http://w3.math.uminho.pt/types2018) describes the technique. 
 
 ### What does it contains
