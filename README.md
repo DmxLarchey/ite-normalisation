@@ -27,7 +27,7 @@ type Ω = α | ω of Ω * Ω * Ω
 let rec nm e = match e with
   | α                => α
   | ω (α,y,z)        => ω (α,nm y,nm z)
-  | ω (ω(a,b,c),y,z) => nm (ω (a,nm(ω(b,y,z)),nm(ω(c,y,z)))
+  | ω (ω(a,b,c),y,z) => nm (ω (a,nm (ω (b,y,z)),nm (ω (c,y,z)))
 ```
 
 * The proof of partial correctness and termination is postponed after 
