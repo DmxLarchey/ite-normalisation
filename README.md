@@ -57,9 +57,9 @@ end.
 ### What does it contains
 
 * [`nm_defs.v`](nm_defs.v), definition of `𝔻 : Ω -> Prop` and `nm : ∀e, 𝔻 e -> Ω` by simulated Induction-Recursion;
-* `nm_correct.v`, partial correction of `nm`: when it terminates, `nm` produces a normal form of its input;
-* `nm_domain.v`, termination of `nm`, that is `∀e, 𝔻  e`;
-* `nm.v`, a fully specified normalisation function based on L. Paulson's `nm` algorithm. 
+* [`nm_correct.v`](nm_correct.v), partial correction of `nm`: when it terminates, `nm` produces a normal form of its input;
+* [`nm_domain.v`](nm_domain.v), termination of `nm`, that is `∀e, 𝔻  e`;
+* [`nm.v`](nm.v), a fully specified normalisation function based on L. Paulson's `nm` algorithm. 
 
 ### How do I set it up? ###
 
