@@ -39,9 +39,9 @@ let rec nm e = match e with
 
 ### What does it contains
 
-* `nm_defs.v`, definition of `𝔻 : Ω -> Prop` and `nm : forall e, 𝔻 e -> Ω` by simulated Induction-Recursion;
+* `nm_defs.v`, definition of `𝔻 : Ω -> Prop` and `nm : ∀e, 𝔻 e -> Ω` by simulated Induction-Recursion;
 * `nm_correct.v`, partial correction of `nm`: when it terminates, `nm` produces a normal form of its input;
-* `nm_domain.v`, termination of `nm`, i.e. totality of `d_nm`;
+* `nm_domain.v`, termination of `nm`, i.e.\ `∀e, 𝔻  e`;
 * `nm.v`, a fully specified normalisation function based on L. Paulson's `nm` algorithm. 
 
 ### How do I set it up? ###
