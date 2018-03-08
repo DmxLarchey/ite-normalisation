@@ -11,22 +11,23 @@
 
 (** Using the simulated IR definition of 
 
-         d_nm : Ω -> Prop 
-       and nm : forall e, d_nm e -> Ω
+            𝔻 : Ω -> Prop and nm : forall e, 𝔻 e -> Ω
 
-    we show totality of d_nm: 
+    we show totality of 𝔻: 
  
-      a) we define a measure |.| : Ω -> nat by structural induction
+      a) we define a measure [.] : Ω -> nat by structural induction
+
       b) we show that nm preserves the measure, ie
 
-           forall e (De : d_nm e), |nm e De| <= |e|
+           forall e (De : 𝔻 e), [nm e De] <= [e]
 
-         by dependent induction on De : d_nm e
-      c) we show that d_nm is total
+         by dependent induction on De : 𝔻 e
+
+      c) we show that 𝔻 is total
       
-           forall e, d_nm e 
+           forall e, 𝔻 e 
            
-         by induction on |e|
+         by induction on [e] : nat
 *)
 
 Require Import Arith Omega Wellfounded.
@@ -34,6 +35,85 @@ Require Import Arith Omega Wellfounded.
 Set Implicit Arguments.
 
 Require Import nm_defs.
+
+Section ce_size.
+
+  Let c x y z := x *(1+y+z).
+
+  (* The next properties are sufficient for the measure *)
+
+  Let c_mono x x' y y' z z' : x <= x' -> y <= y' -> z <= z' -> c x y z <= c x' y' z'.
+  Proof. intros; simpl; apply mult_le_compat; omega. Qed.
+
+  Let c_smono_1 x x' y z : x < x' -> c x y z < c x' y z.
+  Proof. intro; simpl; apply mult_lt_compat_r; omega. Qed.
+
+  Let c_inc_1 x y z : x <= c x y z.
+  Proof. unfold c; rewrite <- Nat.mul_1_r at 1; apply mult_le_compat; omega. Qed.
+
+  Let c_sinc_1 x y z : 0 < x -> 0 < y + z -> x < c x y z.
+  Proof. intros ? ?; unfold c; rewrite <- Nat.mul_1_r at 1; apply mult_lt_compat_l; omega. Qed.
+
+  Let c_sinc_2 x y z : 0 < x -> y < c x y z.
+  Proof. intros ?; unfold c, lt; rewrite <- Nat.mul_1_l at 1; apply mult_le_compat; omega. Qed.
+
+  Let c_sinc_3 x y z : 0 < x -> z < c x y z.
+  Proof. intros ?; unfold c, lt; rewrite <- Nat.mul_1_l at 1; apply mult_le_compat; omega. Qed.
+
+  Let c_special a u v y z : 0 < a -> 0 < y + z -> c a (c u y z) (c v y z) < c (c a u v) y z.
+  Proof.
+    unfold c; intros ? ?.
+    rewrite <- mult_assoc.
+    apply mult_lt_compat_l; auto.
+    simpl.
+    generalize (S (y + z)); intros n.
+    rewrite mult_plus_distr_r; omega.
+  Qed.
+
+  Reserved Notation "'[' e ']'" (at level 0).
+
+  (** This is the decreasing measure *)
+
+  Fixpoint ce_size e :=
+    match e with
+      | α => 1
+      | ω x y z => c [x] [y] [z]
+    end
+  where "[ e ]" := (ce_size e).
+
+  (* Some elementary properties of the measure *)
+
+  Local Fact ce_size_mono x x' y y' z z' : 
+     [x] <= [x'] -> [y] <= [y'] -> [z] <= [z'] -> [ω x y z] <= [ω x' y' z'].
+  Proof. apply c_mono. Qed.
+
+  Local Fact ce_size_smono_1 x x' y z : [x] < [x'] -> [ω x y z] < [ω x' y z].
+  Proof. apply c_smono_1. Qed.
+
+  Local Fact ce_size_ge_1 e : 1 <= [e].
+  Proof.
+    induction e as [ | x Hx y _  z _ ].
+    simpl; auto.
+    apply le_trans with (1 := Hx), c_inc_1.
+  Qed.
+
+  Hint Resolve ce_size_ge_1.
+
+  Local Fact ce_size_sub_1 x y z : [x] < [ω x y z].
+  Proof. simpl; apply c_sinc_1; auto; generalize (ce_size_ge_1 y); omega. Qed.
+
+  Local Fact ce_size_sub_2 x y z : [y] < [ω x y z].
+  Proof. simpl; apply c_sinc_2; auto. Qed.
+
+  Local Fact ce_size_sub_3 x y z : [z] < [ω x y z].
+  Proof. simpl; apply c_sinc_3; auto. Qed.
+
+  (* The special properties that makes it a suitable measure for induction *)
+
+  Local Fact ce_size_special a u v y z : [ω a (ω u y z) (ω v y z)] < [ω (ω a u v) y z].
+  Proof. simpl; apply c_special; auto; generalize (ce_size_ge_1 y); omega. Qed.
+
+End ce_size.
 
 Section measure_ind.
 
@@ -52,29 +132,10 @@ End measure_ind.
 
 Section d_nm_total.
 
-  Reserved Notation "'[' e ']'" (at level 0).
+  Notation "'[' e ']'" := (ce_size e) (at level 0).
 
-  (** This is the decreasing measure *)
-
-  Fixpoint ce_size e :=
-    match e with
-      | α => 1
-      | ω x y z => [x] * (1 + [y] + [z])
-    end
-  where "[ e ]" := (ce_size e).
-
-  Local Fact ce_size_ge_1 : forall e, 1 <= [e].
-  Proof.
-    refine (fix loop e := _).
-    destruct e as [ | [ | u v w ] y z ]; try (simpl; omega).
-    simpl.
-    change 1 with (1 * 1 * 1).
-    do 2 (apply mult_le_compat; try omega).
-    apply loop.
-  Qed.
-
-  Hint Resolve ce_size_ge_1.
-
+  Hint Resolve ce_size_sub_2 ce_size_sub_3 ce_size_mono ce_size_smono_1.
+  
   (** nm preserves the measure *)
 
   Local Fact nm_dec e D : [nm e D] <= [e].
@@ -83,65 +144,24 @@ Section d_nm_total.
     - rewrite (nm_pirr _ D1); auto.
     - rewrite nm_fix_0; auto.
     - rewrite nm_fix_1; simpl; omega.
-    - rewrite nm_fix_2; simpl in * |- *.
-      apply le_trans with (1 := ID3).
-      rewrite <- mult_assoc.
-      apply mult_le_compat_l.
-      apply le_trans with (S ((ce_size v + ce_size w) * S (ce_size y + ce_size z))).
-      * apply le_n_S; rewrite Nat.mul_add_distr_r; omega.
-      * simpl mult at 2; omega.
+    - rewrite nm_fix_2.
+      apply le_trans with (1 := ID3),
+            le_trans with (2 := ce_size_special _ _ _ _ _); auto.
   Qed.
+
+  Hint Resolve nm_dec.
 
   (** Termination/totality by induction on [e] *)
 
-  Theorem d_nm_total e : d_nm e.
+  Theorem d_nm_total e : 𝔻 e.
   Proof.
     induction e as [ [ | [ | u v w ] y z ] IHe ] using (measure_ind ce_size).
     - apply d_nm_0.
     - apply d_nm_1; apply IHe; simpl; omega.
-    - assert (D1 : d_nm (ω v y z)).
-      { apply IHe.
-        simpl ce_size at 2.
-        unfold lt.
-        rewrite <- Nat.mul_1_l at 1.
-        rewrite <- mult_assoc.
-        apply mult_le_compat.
-        apply ce_size_ge_1.
-        simpl; apply le_n_S.
-        generalize ([v]) ([y]) ([z]) ([w]).
-        intros a b c d.
-        rewrite Nat.mul_add_distr_r.
-        generalize (a * S (b+c)) (d*S(b+c)). 
-        intros; omega. }
-      assert (D2 : d_nm (ω w y z)).
-      { apply IHe.
-        simpl ce_size at 2.
-        unfold lt.
-        rewrite <- Nat.mul_1_l at 1.
-        rewrite <- mult_assoc.
-        apply mult_le_compat.
-        apply ce_size_ge_1.
-        simpl; apply le_n_S.
-        generalize ([v]) ([y]) ([z]) ([w]).
-        intros a b c d.
-        rewrite Nat.mul_add_distr_r.
-        generalize (a * S (b+c)) (d*S(b+c)). 
-        intros; omega. }
+    - assert (D1 : 𝔻 (ω v y z)) by auto.
+      assert (D2 : 𝔻 (ω w y z)) by auto.
       apply d_nm_2 with D1 D2.
-      apply IHe.
-      simpl.
-      rewrite <- mult_assoc.
-      apply mult_lt_compat_l; auto.
-      generalize (nm_dec D1) (nm_dec D2).
-      simpl ce_size.
-      assert (1+1 <= [y] + [z]) as H.
-      { generalize (ce_size_ge_1 y) (ce_size_ge_1 z); omega. }
-      revert H.
-      generalize ([y] + [z]); intros a H H1 H2.
-      apply le_lt_trans with (S (([v] + [w])*(S a))).
-      apply le_n_S.
-      rewrite Nat.mul_add_distr_r; omega.
-      simpl mult at 2; omega.
+      apply IHe, le_lt_trans with (2 := ce_size_special _ _ _ _ _); auto.
   Qed.
   
 End d_nm_total.
