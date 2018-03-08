@@ -11,7 +11,9 @@
 
 (** From verify.rwth-aachen.de/giesl/papers/ibn96-30.ps
 
-   type Ω = α | ω of Ω*Ω*Ω
+    orig. algo from https://arxiv.org/ftp/cs/papers/9301/9301103.pdf
+
+   type Ω = α | ω of Ω * Ω * Ω
 
    let rec nm e = match e with
      | α                => α
@@ -20,13 +22,13 @@
 
   We simulate the following Inductive/Recursive definition
 
-  Inductive d_nm : Ω -> Prop :=
-    | d_nm_0 : d_nm α
-    | d_nm_1 : forall y z, d_nm y -> d_nm z -> d_nm (ω α y z)
-    | d_nm_2 : forall a b c y z (Db : d_nm (ω b y z)) (Dc : d_nm (ω c y z)),
-                      d_nm (ω a (nm (ω b y z) D1) (nm (ω c y z) D2)) 
-                   -> d_nm (ω (ω a b c) y z)
-  with Fixpoint nm e (De : d_nm e) : Ω :=
+  Inductive 𝔻 : Ω -> Prop :=
+    | d_nm_0 : 𝔻 α
+    | d_nm_1 : forall y z, 𝔻 y -> 𝔻 z -> 𝔻 (ω α y z)
+    | d_nm_2 : forall a b c y z (Db : 𝔻 (ω b y z)) (Dc : 𝔻 (ω c y z)),
+\                      𝔻 (ω a (nm (ω b y z) D1) (nm (ω c y z) D2))
+\                   -> 𝔻 (ω (ω a b c) y z)
+  with Fixpoint nm e (De : 𝔻 e) : Ω :=
     match De with
       | d_nm_0 => α
       | d_nm_1 y z Dy Dz => ω α (nm y Dy) (nm z Dz)
@@ -44,21 +46,24 @@ Notation Ω := cexpr.
 
 Section nm_def.
 
-  (** The graph g_nm : Ω -> Ω -> Prop of nm 
-      with notation x -nm> y for (g_nm x y)
+  (** The graph 𝔾 : Ω -> Ω -> Prop of nm 
+      with notation x -nm> y for (𝔾 x y)
     *)
 
   Reserved Notation "x '-nm>' y" (at level 70, no associativity).
 
-  Local Inductive g_nm : Ω -> Ω -> Prop :=
-    | in_gnm_0 : α -nm> α
-    | in_gnm_1 y ny z nz : y -nm> ny -> z -nm> nz -> ω α y z -nm> ω α ny nz
+  Local Inductive 𝔾 : Ω -> Ω -> Prop :=
+    | in_gnm_0 :     α -nm> α
+    | in_gnm_1 y ny z nz : 
+                     y -nm> ny 
+                  -> z -nm> nz 
+                  -> ω α y z -nm> ω α ny nz
     | in_gnm_2 : forall u v w y z na nb nc, 
                      ω v y z -nm> na 
                   -> ω w y z -nm> nb 
                   -> ω u na nb -nm> nc
                   -> ω (ω u v w) y z -nm> nc
-  where "x -nm> y" := (g_nm x y).
+  where "x -nm> y" := (𝔾 x y).
 
   Local Fact g_nm_fun e n1 n2 : e -nm> n1 -> e -nm> n2 -> n1 = n2.
   Proof.
@@ -75,72 +80,82 @@ Section nm_def.
 
   Unset Elimination Schemes.
 
-  Inductive d_nm : Ω -> Prop :=
-    | in_dnm_0 : d_nm α
-    | in_dnm_1 : forall y z, 
-                 d_nm y 
-              -> d_nm z 
-              -> d_nm (ω α y z)
-    | in_dnm_2 : forall a b c y z,
-                 d_nm (ω b y z) 
-              -> d_nm (ω c y z) 
-              ->(forall nb nc, ω b y z -nm> nb  
-                           ->  ω c y z -nm> nc 
-                           ->  d_nm (ω a nb nc)) 
-              -> d_nm (ω (ω a b c) y z).
+  Inductive 𝔻 : Ω -> Prop :=
+    | in_dnm_0 :                   𝔻 α
+    | in_dnm_1 : forall y z,       𝔻 y 
+                                -> 𝔻 z 
+                                -> 𝔻 (ω α y z)
+    | in_dnm_2 : forall a b c y z, 𝔻 (ω b y z) 
+                                -> 𝔻 (ω c y z) 
+                  ->(forall nb nc, ω b y z -nm> nb  
+                                -> ω c y z -nm> nc 
+                                -> 𝔻 (ω a nb nc)) 
+                                -> 𝔻 (ω (ω a b c) y z).
 
   Set Elimination Schemes.
   
   Section nm_rec.
   
     (** In the five next lemmas, it is critically important
-        that the output domain predicate d_nm is structurally
-        simpler (ie. a sub-term) than the input domain predicate
-        
+        that the output domain predicate of type 𝔻 is structurally
+        simpler (ie. a sub-term) than the input domain predicate 
+        of type 𝔻.
+
         Miraculously, inversion does the job ... this may not be 
         true with older version of the tactic ...
      *)
   
-    Let d_nm_inv_1 y z : d_nm (ω α y z) -> d_nm y.
+    Let d_nm_inv_1 y z : 𝔻 (ω α y z) -> 𝔻 y.
     Proof. inversion 1; trivial. Qed.
     
-    Let d_nm_inv_2 y z : d_nm (ω α y z) -> d_nm z.
+    Let d_nm_inv_2 y z : 𝔻 (ω α y z) -> 𝔻 z.
     Proof. inversion 1; trivial. Qed.
     
-    Let d_nm_inv_3 a b c y z : d_nm (ω (ω a b c) y z) -> d_nm (ω b y z).
+    Let d_nm_inv_3 a b c y z : 𝔻 (ω (ω a b c) y z) -> 𝔻 (ω b y z).
     Proof. inversion 1; trivial. Qed.
     
-    Let d_nm_inv_4 a b c y z : d_nm (ω (ω a b c) y z) -> d_nm (ω c y z).
+    Let d_nm_inv_4 a b c y z : 𝔻 (ω (ω a b c) y z) -> 𝔻 (ω c y z).
     Proof. inversion 1; trivial. Qed.
     
-    Let d_nm_inv_5 a b c y z nb nc : 
-                               d_nm (ω (ω a b c) y z)
-                            -> ω b y z -nm> nb
-                            -> ω c y z -nm> nc
-                            -> d_nm (ω a nb nc).
+    Let d_nm_inv_5 a b c y z nb nc : 𝔻 (ω (ω a b c) y z)
+                                  -> ω b y z -nm> nb
+                                  -> ω c y z -nm> nc
+                                  -> 𝔻 (ω a nb nc).
     Proof. inversion 1; intros; auto. Qed.
 
-    Let nm_rec : forall e, d_nm e -> { n | e -nm> n }.
-    Proof.
-      refine (fix loop e (De : d_nm e) { struct De } := _); revert De.
-      refine (match e as e' return d_nm e' -> sig (g_nm e') with
-        | α               => fun De      => exist _ α _
-        | ω α y z         => fun De => 
-        match loop _ (d_nm_inv_1 De), loop _ (d_nm_inv_2 De) with 
-          | exist _ ny Dy, exist _ nz Dz => exist _ (ω α ny nz) _ 
-        end
-        | ω (ω a b c) y z => fun De =>
-        match loop _ (d_nm_inv_3 De), loop _ (d_nm_inv_4 De) with 
-          | exist _ nb Db, exist _ nc Dc =>
-          match loop _ (d_nm_inv_5 De Db Dc) with
-            | exist _ na Da              => exist _ na _
-          end
-        end
-      end). 
-      - constructor.
-      - constructor; trivial.
-      - constructor 3 with nb nc; auto.
-    Qed.
+    (** We give the proof term directly (programming style)
+        but it could be built progressively using refine tactics. 
+        Using refine is the recommended method. Obtaining the code 
+        directly is not for the faint of heart ... even though
+        it looks nice in the end. 
+
+        This proof term is a decoration of the OCaml code of nm 
+        with extra typing information consisting in:
+
+          1/ a pre-condition De : 𝔻 e which is a termination certificate
+          2/ a post-condition relating the input e to the output n : e -nm> n
+ 
+      *)
+
+    Let nm_rec := fix nm_rec e (De : 𝔻 e) {struct De} : { n | e -nm> n } :=
+      match e as e' return 𝔻 e' -> sig (𝔾 e') with
+        | α               => fun _ => 
+
+                          exist _ α in_gnm_0
+
+        | ω α y z         => fun D => 
+          let (ny,Dy) := nm_rec y (d_nm_inv_1 D) in
+          let (nz,Dz) := nm_rec z (d_nm_inv_2 D) in
+
+                          exist _ (ω α ny nz) (in_gnm_1 Dy Dz) 
+
+        | ω (ω a b c) y z => fun D =>
+          let (nb,Db) := nm_rec (ω b y z)   (d_nm_inv_3 D)       in
+          let (nc,Dc) := nm_rec (ω c y z)   (d_nm_inv_4 D)       in
+          let (na,Da) := nm_rec (ω a nb nc) (d_nm_inv_5 D Db Dc) in
+
+                          exist _ na (in_gnm_2 Db Dc Da)
+      end De.
 
     Definition nm e D := proj1_sig (@nm_rec e D).
     
@@ -151,14 +166,14 @@ Section nm_def.
 
   Arguments nm e D : clear implicits.
 
-  Fact d_nm_0 : d_nm α.
+  Fact d_nm_0 : 𝔻 α.
   Proof. constructor; auto. Qed.
 
-  Fact d_nm_1 y z : d_nm y -> d_nm z -> d_nm (ω α y z).
-  Proof. constructor 2; assumption.  Qed.
+  Fact d_nm_1 y z : 𝔻 y -> 𝔻 z -> 𝔻 (ω α y z).
+  Proof. constructor 2; assumption. Qed.
 
-  Fact d_nm_2 u v w y z Dv Dw :
-       d_nm (ω u (nm (ω v y z) Dv) (nm (ω w y z) Dw)) -> d_nm (ω (ω u v w) y z).
+  Fact d_nm_2 u v w y z Dv Dw : 𝔻 (ω u (nm (ω v y z) Dv) (nm (ω w y z) Dw)) 
+                             -> 𝔻 (ω (ω u v w) y z).
   Proof.
     constructor 3; auto.
     intros na nb nma nmb. 
@@ -169,7 +184,7 @@ Section nm_def.
  
   Section d_nm_ind.
 
-    Variables (P : forall e, d_nm e -> Prop)
+    Variables (P : forall e, 𝔻 e -> Prop)
               (HPi : forall e D1 D2, @P e D1 -> @P e D2)
               (HP0 : P d_nm_0)
               (HP1 : forall y z D1 (_ : P D1) D2 (_ : P D2), P (@d_nm_1 y z D1 D2))
@@ -206,4 +221,7 @@ Section nm_def.
   
 End nm_def.
 
+Definition 𝔻_ind := d_nm_ind.
 Arguments nm e D : clear implicits.
+
+Recursive Extraction nm.
