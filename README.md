@@ -1,4 +1,4 @@
-### L. Paulson's If-Then-Else normalisation in Coq through Simulated Induction-Recursion
+## L. Paulson's If-Then-Else normalisation in Coq via Simulated Induction-Recursion
 
 ### Copyright
 
