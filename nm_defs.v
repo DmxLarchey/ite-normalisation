@@ -96,20 +96,60 @@ Section nm_def.
   
   Section nm_rec.
   
-    (** In the five next lemmas, it is critically important
-        that the output domain predicate of type 𝔻 is structurally
-        simpler (ie. a sub-term) than the input domain predicate 
-        of type 𝔻.
-
-        Miraculously, inversion does the job ... this may not be 
-        true with older version of the tactic ...
-     *)
-  
-    Let d_nm_inv_1 y z : 𝔻 (ω α y z) -> 𝔻 y.
-    Proof. inversion 1; trivial. Qed.
+    (** In the five next inversion lemmas, 
     
+        d_nm_inv_1 y z : 𝔻 (ω α y z) -> 𝔻 y
+        d_nm_inv_2 y z : 𝔻 (ω α y z) -> 𝔻 z
+        d_nm_inv_3 a b c y z : 𝔻 (ω (ω a b c) y z) -> 𝔻 (ω b y z)
+        d_nm_inv_4 a b c y z : 𝔻 (ω (ω a b c) y z) -> 𝔻 (ω c y z)
+        d_nm_inv_5 a b c y z nb nc : 𝔻 (ω (ω a b c) y z)
+                                  -> ω b y z -nm> nb
+                                  -> ω c y z -nm> nc
+                                  -> 𝔻 (ω a nb nc)
+    
+        it is *critically* important that the output domain term 
+        of type 𝔻 is structurally simpler (ie. a sub-term) than the 
+        input domain term of type 𝔻. 
+        
+        Because these lemmas serve as justification of structural
+        termination of the below fixpoint computation of nm_rec *)
+        
+    (* First we show how to get d_nm_inv_1 in a tightly controlled 
+       way by hand writting its term using small inversions as in
+       
+       "Handcrafted Inversions Made Operational on Operational Semantics"
+                by JF. Monin and X. Shi  (ITP 2013)
+       
+       The technique is based on dependent pattern-matching. 
+       
+       Looking at the code of d_nm_inv_1 below, it is obvious that
+       every branch produces a sub-term of the input term.
+       Notice that the "match F with end" has ZERO branches hence
+       obviously satisfies a universal property over branches *)
+       
+    Let d_nm_shape_1 x := match x with ω α y z => True | _ => False end.
+    Let d_nm_pred_1 x  := match x with ω α y z => y    | _ => α     end. (* α value arbitrary here *)
+
+    Let d_nm_inv_1 y z (d : 𝔻 (ω α y z)) : 𝔻 y :=
+      match d in 𝔻 x return d_nm_shape_1 x -> 𝔻 (d_nm_pred_1 x) with
+        | in_dnm_1 dy dz => fun _ => dy 
+        | _              => fun F => match F with end 
+      end I.
+      
+    (* We could proceed in the same way for the remaining inversion
+       lemmas but it appears that the "inversion" tactic actually
+       also produces sub-terms in this case. This property did not
+       always hold for the older versions of the tactic and we do
+       not certify that it will work in any case *) 
+       
+           
     Let d_nm_inv_2 y z : 𝔻 (ω α y z) -> 𝔻 z.
     Proof. inversion 1; trivial. Qed.
+    
+    (** It could be interesting to compare the code of d_nm_inv_1 and d_nm_inv_2
+    
+        Print d_nm_inv_1.
+        Print d_nm_inv_2. *)
     
     Let d_nm_inv_3 a b c y z : 𝔻 (ω (ω a b c) y z) -> 𝔻 (ω b y z).
     Proof. inversion 1; trivial. Qed.
@@ -132,10 +172,8 @@ Section nm_def.
         This proof term is a decoration of the OCaml code of nm 
         with extra typing information consisting in:
 
-          1/ a pre-condition De : 𝔻 e which is a termination certificate
-          2/ a post-condition relating the input e to the output n : e -nm> n
- 
-      *)
+          1/ a pre-condition De : 𝔻 e which is a termination certificate (ie. d_nm_inv_[1-5])
+          2/ a post-condition relating the input e to the output n : e -nm> n *)
 
     Let nm_rec := fix nm_rec e (De : 𝔻 e) {struct De} : { n | e -nm> n } :=
       match e as e' return 𝔻 e' -> sig (𝔾 e') with
@@ -156,6 +194,8 @@ Section nm_def.
 
                           exist _ na (in_gnm_2 Db Dc Da)
       end De.
+      
+    (** Then we derive nm and nm_spec by projection *)
 
     Definition nm e D := proj1_sig (@nm_rec e D).
     
