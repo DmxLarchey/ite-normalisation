@@ -47,25 +47,25 @@ Notation Ω := cexpr.
 Section nm_def.
 
   (** The graph 𝔾 : Ω -> Ω -> Prop of nm 
-      with notation x -nm> y for (𝔾 x y)
+      with notation x ~~> y for (𝔾 x y)
     *)
 
-  Reserved Notation "x '-nm>' y" (at level 70, no associativity).
+  Reserved Notation "x '~~>' y" (at level 70, no associativity).
 
   Local Inductive 𝔾 : Ω -> Ω -> Prop :=
-    | in_gnm_0 :     α -nm> α
+    | in_gnm_0 :     α ~~> α
     | in_gnm_1 y ny z nz : 
-                     y -nm> ny 
-                  -> z -nm> nz 
-                  -> ω α y z -nm> ω α ny nz
+                     y ~~> ny 
+                  -> z ~~> nz 
+                  -> ω α y z ~~> ω α ny nz
     | in_gnm_2 : forall u v w y z na nb nc, 
-                     ω v y z -nm> na 
-                  -> ω w y z -nm> nb 
-                  -> ω u na nb -nm> nc
-                  -> ω (ω u v w) y z -nm> nc
-  where "x -nm> y" := (𝔾 x y).
+                     ω v y z ~~> na 
+                  -> ω w y z ~~> nb 
+                  -> ω u na nb ~~> nc
+                  -> ω (ω u v w) y z ~~> nc
+  where "x ~~> y" := (𝔾 x y).
 
-  Local Fact g_nm_fun e n1 n2 : e -nm> n1 -> e -nm> n2 -> n1 = n2.
+  Local Fact g_nm_fun e n1 n2 : e ~~> n1  ->  e ~~> n2  -> n1 = n2.
   Proof.
     intros H; revert H n2.
     induction 1 as [ 
@@ -87,8 +87,8 @@ Section nm_def.
                                 -> 𝔻 (ω α y z)
     | in_dnm_2 : forall a b c y z, 𝔻 (ω b y z) 
                                 -> 𝔻 (ω c y z) 
-                  ->(forall nb nc, ω b y z -nm> nb  
-                                -> ω c y z -nm> nc 
+                  ->(forall nb nc, ω b y z ~~> nb  
+                                -> ω c y z ~~> nc 
                                 -> 𝔻 (ω a nb nc)) 
                                 -> 𝔻 (ω (ω a b c) y z).
 
@@ -96,26 +96,23 @@ Section nm_def.
   
   Section nm_rec.
   
-    (** In the five next inversion lemmas, 
+    (** The five next inversion lemmas
     
         d_nm_inv_1 y z : 𝔻 (ω α y z) -> 𝔻 y
         d_nm_inv_2 y z : 𝔻 (ω α y z) -> 𝔻 z
         d_nm_inv_3 a b c y z : 𝔻 (ω (ω a b c) y z) -> 𝔻 (ω b y z)
         d_nm_inv_4 a b c y z : 𝔻 (ω (ω a b c) y z) -> 𝔻 (ω c y z)
         d_nm_inv_5 a b c y z nb nc : 𝔻 (ω (ω a b c) y z)
-                                  -> ω b y z -nm> nb
-                                  -> ω c y z -nm> nc
+                                  -> ω b y z ~~> nb
+                                  -> ω c y z ~~> nc
                                   -> 𝔻 (ω a nb nc)
     
-        it is *critically* important that the output domain term 
-        of type 𝔻 is structurally simpler (ie. a sub-term) than the 
-        input domain term of type 𝔻. 
-        
-        Because these lemmas serve as justification of structural
-        termination of the below fixpoint computation of nm_rec *)
+        construct a structurally simpler (ie. a sub-term) of the input domain
+        term of type 𝔻.  This is *critically* important because these lemmas
+        justify termination of the below fixpoint computation of nm_rec *)
         
     (* First we show how to get d_nm_inv_1 in a tightly controlled 
-       way by hand writting its term using small inversions as in
+       way by hand writting its term using a variant of small inversions
        
        "Handcrafted Inversions Made Operational on Operational Semantics"
                 by JF. Monin and X. Shi  (ITP 2013)
@@ -126,22 +123,22 @@ Section nm_def.
        every branch produces a sub-term of the input term.
        Notice that the "match F with end" has ZERO branches hence
        obviously satisfies a universal property over branches *)
-       
-    Let d_nm_shape_1 x := match x with ω α y z => True | _ => False end.
-    Let d_nm_pred_1 x  := match x with ω α y z => y    | _ => α     end. (* α value arbitrary here *)
 
+    (* An arbitrary value of type Ω *)
+    Let AV := α.
+    Let d_nm_shape_1 x := match x with ω α y z => True | _ => False end.
+
+    Let d_nm_pred_1 x  := match x with ω α y z => y    | _ => AV    end.
     Let d_nm_inv_1 y z (d : 𝔻 (ω α y z)) : 𝔻 y :=
       match d in 𝔻 x return d_nm_shape_1 x -> 𝔻 (d_nm_pred_1 x) with
         | in_dnm_1 dy dz => fun _ => dy 
         | _              => fun F => match F with end 
       end I.
       
-    (* We could proceed in the same way for the remaining inversion
-       lemmas but it appears that the "inversion" tactic actually
+    (* We could also proceed using the "inversion", which 
        also produces sub-terms in this case. This property did not
        always hold for the older versions of the tactic and we do
        not certify that it will work in any case *) 
-       
            
     Let d_nm_inv_2 y z : 𝔻 (ω α y z) -> 𝔻 z.
     Proof. inversion 1; trivial. Qed.
@@ -150,18 +147,39 @@ Section nm_def.
     
         Print d_nm_inv_1.
         Print d_nm_inv_2. *)
+
+    (* For the remaining inversions we stick to small inversions for
+       sustainability reasons *)
     
-    Let d_nm_inv_3 a b c y z : 𝔻 (ω (ω a b c) y z) -> 𝔻 (ω b y z).
-    Proof. inversion 1; trivial. Qed.
-    
-    Let d_nm_inv_4 a b c y z : 𝔻 (ω (ω a b c) y z) -> 𝔻 (ω c y z).
-    Proof. inversion 1; trivial. Qed.
-    
-    Let d_nm_inv_5 a b c y z nb nc : 𝔻 (ω (ω a b c) y z)
-                                  -> ω b y z -nm> nb
-                                  -> ω c y z -nm> nc
-                                  -> 𝔻 (ω a nb nc).
-    Proof. inversion 1; intros; auto. Qed.
+    Let d_nm_shape_2 x := match x with ω (ω a b c) y z => True | _ => False end.
+
+    Let d_nm_pred_3 x := match x with ω (ω a b c) y z => ω b y z | _ => AV  end.
+    Let d_nm_inv_3 a b c y z (d : 𝔻 (ω (ω a b c) y z)) : 𝔻 (ω b y z) :=
+      match d in 𝔻 x return d_nm_shape_2 x -> 𝔻 (d_nm_pred_3 x) with
+        | in_dnm_2 db dc da => fun _ => db 
+        | _                 => fun F => match F with end 
+      end I.
+
+    Let d_nm_pred_4 x := match x with ω (ω a b c) y z => ω c y z | _ => AV  end.
+    Let d_nm_inv_4 a b c y z (d : 𝔻 (ω (ω a b c) y z)) : 𝔻 (ω c y z) :=
+      match d in 𝔻 x return d_nm_shape_2 x -> 𝔻 (d_nm_pred_4 x) with
+        | in_dnm_2 db dc da => fun _ => dc 
+        | _                 => fun F => match F with end 
+      end I.
+
+    Let d_nm_pred_5 x := match x with ω (ω a b c) y z => a | _ => AV  end.
+    Let d_nm_inv_5 a b c y z nb nc (d : 𝔻 (ω (ω a b c) y z)) :
+                                    ω b y z ~~> nb
+                                ->  ω c y z ~~> nc
+                                ->  𝔻 (ω a nb nc) :=
+      match d in 𝔻 x return
+                  d_nm_shape_2 x
+               -> d_nm_pred_3 x ~~> nb
+               -> d_nm_pred_4 x ~~> nc
+               -> 𝔻 (ω (d_nm_pred_5 x) nb nc) with
+        | in_dnm_2 db dc da => fun _ => da nb nc
+        | _                 => fun F => match F with end
+      end I.
 
     (** We give the proof term directly (programming style)
         but it could be built progressively using refine tactics. 
@@ -173,9 +191,9 @@ Section nm_def.
         with extra typing information consisting in:
 
           1/ a pre-condition De : 𝔻 e which is a termination certificate (ie. d_nm_inv_[1-5])
-          2/ a post-condition relating the input e to the output n : e -nm> n *)
+          2/ a post-condition relating the input e to the output n : e ~~> n *)
 
-    Let nm_rec := fix nm_rec e (De : 𝔻 e) {struct De} : { n | e -nm> n } :=
+    Let nm_rec := fix nm_rec e (De : 𝔻 e) {struct De} : { n | e ~~> n } :=
       match e as e' return 𝔻 e' -> sig (𝔾 e') with
         | α               => fun _ => 
 
@@ -199,7 +217,7 @@ Section nm_def.
 
     Definition nm e D := proj1_sig (@nm_rec e D).
     
-    Fact nm_spec e D : e -nm> @nm e D.
+    Fact nm_spec e D : e ~~> @nm e D.
     Proof. apply (proj2_sig _). Qed.
 
   End nm_rec.
@@ -241,6 +259,8 @@ Section nm_def.
 
   End d_nm_ind.
 
+  (* Irrelevance and fixpoint properties of nm, for convenience *)
+  
   Fact nm_pirr e D1 D2 : nm e D1 = nm e D2.
   Proof. apply g_nm_fun with e; apply nm_spec. Qed.
 
