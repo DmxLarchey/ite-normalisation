@@ -51,7 +51,7 @@ with Fixpoint nm e (De : 𝔻 e) : Ω := match De with
 end.
 ```
 
-* The paper [Simulating Induction-Recursion for Partials Algorithms](http://www.loria.fr/~larchey/papers/TYPES_2018_paper_19.pdf)
+* The paper [Simulating Induction-Recursion for Partial Algorithms](http://www.loria.fr/~larchey/papers/TYPES_2018_paper_19.pdf)
   submitted to [TYPES 2018](http://w3.math.uminho.pt/types2018) describes the technique. 
 
 ### What does it contains
