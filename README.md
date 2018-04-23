@@ -52,7 +52,7 @@ end.
 ```
 
 * The paper [Simulating Induction-Recursion for Partial Algorithms](http://www.loria.fr/~larchey/papers/TYPES_2018_paper_19.pdf)
-  describes the technique and going to be presented at [TYPES 2018](http://w3.math.uminho.pt/types2018).
+  describes the technique and is going to be presented at [TYPES 2018](http://w3.math.uminho.pt/types2018).
 
 ### What does it contains
 
