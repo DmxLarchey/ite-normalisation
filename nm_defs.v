@@ -239,7 +239,7 @@ Section nm_def.
     rewrite (g_nm_fun nmb (nm_spec Dw)).
     assumption.
   Qed.
- 
+  
   Section d_nm_ind.
 
     Variables (P : forall e, 𝔻 e -> Prop)
@@ -258,6 +258,28 @@ Section nm_def.
     Qed.
 
   End d_nm_ind.
+ 
+  Section d_nm_rect.
+
+    Variables (P : forall e, 𝔻 e -> Type)
+              (HPi : forall e D1 D2, @P e D1 -> @P e D2)
+              (HP0 : P d_nm_0)
+              (HP1 : forall y z D1 (_ : P D1) D2 (_ : P D2), P (@d_nm_1 y z D1 D2))
+              (HP2 : forall u v w y z D1 (_ : P D1) D2 (_ : P D2) D3 (_ : P D3), P (@d_nm_2 u v w y z D1 D2 D3)).
+              
+    Fixpoint d_nm_rect e D { struct D } : @P e D.
+    Proof.
+      destruct e as [ | [ | a b c ] y z ].
+      - apply HPi with (1 := HP0).
+      - refine (HPi _ (HP1 (d_nm_rect y _) (d_nm_rect z _))); inversion D; auto.
+      - assert (𝔻 (ω b y z)) as Db by (inversion D; auto).
+        assert (𝔻 (ω c y z)) as Dc by (inversion D; auto).
+        refine (HPi _ (HP2 (d_nm_rect _ Db) (d_nm_rect _ Dc) (d_nm_rect _ _))).
+        inversion D; subst; auto.
+        apply H6; apply nm_spec.
+    Qed.
+
+  End d_nm_rect.
 
   (* Irrelevance and fixpoint properties of nm, for convenience *)
   
