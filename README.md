@@ -42,7 +42,7 @@ Inductive 𝔻 : Ω -> Prop :=
   | d_nm_0 : 𝔻 α
   | d_nm_1 : forall y z, 𝔻 y -> 𝔻 z -> 𝔻 (ω α y z)
   | d_nm_2 : forall a b c y z (Db : 𝔻 (ω b y z)) (Dc : 𝔻 (ω c y z)),
-                      𝔻 (ω a (nm (ω b y z) D1) (nm (ω c y z) D2)) 
+                      𝔻 (ω a (nm (ω b y z) Db) (nm (ω c y z) Dc)) 
                    -> 𝔻 (ω (ω a b c) y z)
 with Fixpoint nm e (De : 𝔻 e) : Ω := match De with
   | d_nm_0 => α
